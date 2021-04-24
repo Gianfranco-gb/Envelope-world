@@ -6,13 +6,12 @@ import java.util.ArrayList;
 
 
 
-
-
 public class EnvelopeWorldEnv {
 /**
    world dimension
 
 **/
+    String[] locations;
   int  WorldDim;
 
 
@@ -35,8 +34,7 @@ public class EnvelopeWorldEnv {
 *            set of envelope locations in a single line.
 **/
   public void loadEnvelopeLocations( String envelopeFile ) {
-
-
+      locations = envelopeFile.split(" ");
   }
 
 
@@ -70,7 +68,7 @@ public class EnvelopeWorldEnv {
            if(msg.getComp(0).equals("detectsat")){
                int x = Integer.parseInt(msg.getComp(1));
                int y = Integer.parseInt(msg.getComp(2));
-                String message = EnvelopeLocation(x, y);
+               String message = EnvelopeLocation(x, y);
            }
              // YOU MUST ANSWER HERE TO THE OTHER MESSAGE TYPE:
              //   ( "detectsat", "x" , "y", "" )
@@ -82,8 +80,12 @@ public class EnvelopeWorldEnv {
 
 
 
-   public String EnvelopeLocation(int x, int y){
 
+
+   public String EnvelopeLocation(int Ax, int Ay, int Ex, int Ey){
+       if (Ax < Ex && Ay < Ey){
+
+       }
 
    }
 
