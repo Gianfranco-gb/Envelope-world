@@ -44,7 +44,7 @@ public static void runStepsSequence( int wDim,
     
    // Execute sequence of steps with the Agent
     EAgent.runNextStep();
-    System.out.println("hola354523");
+
 
 }
 
