@@ -3,9 +3,12 @@ package apryraz.eworld;
 
 
 import java.io.IOException;
+import java.util.StringTokenizer;
+
 import org.sat4j.specs.*;
 import org.sat4j.minisat.*;
 import org.sat4j.reader.*;
+import
 
 
 /**
@@ -60,6 +63,13 @@ public static void main ( String[] args) throws ParseFormatException,
 
   // Here I run a concrete example, but you should read parameters from
   // the command line, as decribed above.
+
+    // int wDim = Integer.parseInt(args[0]);
+    //int numSteps = Integer.parseInt(args[1]);
+
+   // runStepsSequence(wDim, numSteps, args[2], args[3]);
+
+
   runStepsSequence(  4, 5, "tests/steps1.txt", "tests/envelopes1.txt"  );
 }
 

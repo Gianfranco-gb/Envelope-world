@@ -61,12 +61,17 @@ public class EnvelopeWorldEnv {
            {
              
              
-             ans = new AMessage("movedto",msg.getComp(1),msg.getComp(2)  );
+             ans = new AMessage("movedto",msg.getComp(1),msg.getComp(2), "" );
            }
            else
-             ans = new AMessage("notmovedto",msg.getComp(1),msg.getComp(2), "" );
+             ans = new AMessage("notmovedto",msg.getComp(1),msg.getComp(2), "");
 
        } else {
+           if(msg.getComp(0).equals("detectsat")){
+               int x = Integer.parseInt(msg.getComp(1));
+               int y = Integer.parseInt(msg.getComp(2));
+                String message = EnvelopeLocation(x, y);
+           }
              // YOU MUST ANSWER HERE TO THE OTHER MESSAGE TYPE:
              //   ( "detectsat", "x" , "y", "" )
              //
@@ -75,6 +80,12 @@ public class EnvelopeWorldEnv {
 
    }
 
+
+
+   public String EnvelopeLocation(int x, int y){
+
+
+   }
 
 
  /**
