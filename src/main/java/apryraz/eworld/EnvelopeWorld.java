@@ -8,7 +8,7 @@ import java.util.StringTokenizer;
 import org.sat4j.specs.*;
 import org.sat4j.minisat.*;
 import org.sat4j.reader.*;
-import
+
 
 
 /**
@@ -46,7 +46,9 @@ public static void runStepsSequence( int wDim,
     EAgent.loadListOfSteps(numSteps,fileSteps);
     
    // Execute sequence of steps with the Agent
-    EAgent.runNextStep();
+    for (int stepNum = 0; stepNum < numSteps; stepNum++) {
+        EAgent.runNextStep();
+    }
 
 
 }

@@ -12,8 +12,9 @@ public class EnvelopeWorldEnv {
 
 **/
     String[] locations;
-  int  WorldDim;
-
+    int WorldDim;
+    String[] lectures = new String[5];
+    String lecturesString;
 
 /**
 *  Class constructor
@@ -68,7 +69,10 @@ public class EnvelopeWorldEnv {
            if(msg.getComp(0).equals("detectsat")){
                int x = Integer.parseInt(msg.getComp(1));
                int y = Integer.parseInt(msg.getComp(2));
-               String message = EnvelopeLocation(x, y);
+               InitializeLectures();
+               Allenvelops(x,y);
+               ConverLecturesString();
+               ans = new AMessage("detectsat", msg.getComp(1), msg.getComp(2), lecturesString );
            }
              // YOU MUST ANSWER HERE TO THE OTHER MESSAGE TYPE:
              //   ( "detectsat", "x" , "y", "" )
@@ -78,15 +82,46 @@ public class EnvelopeWorldEnv {
 
    }
 
-
-
-
-
-   public String EnvelopeLocation(int Ax, int Ay, int Ex, int Ey){
-       if (Ax < Ex && Ay < Ey){
-
+    public void InitializeLectures(){
+       for(int i = 0; i<lectures.length; i++){
+           lectures[i] = "0";
        }
+    }
 
+    public void ConverLecturesString(){
+       for(int i = 0; i<lectures.length; i++){
+           lecturesString = lecturesString+ lectures[i];
+       }
+    }
+
+   public void Allenvelops (int x, int y){
+       for( int i = 0; i < locations.length; i++){
+           String envelope = locations[i];
+          int Ex = envelope.charAt(0);
+          int Ey = envelope.charAt(2);
+          EnvelopeLocation(x,y, Ex, Ey);
+       }
+   }
+
+
+
+
+   public void EnvelopeLocation(int Ax, int Ay, int Ex, int Ey){
+       if (((Ax+1 == Ex) && (Ay-1 == Ey)) || ((Ax+1 == Ey) && (Ay == Ey)) || ((Ax+1 == Ex) && (Ay +1 == Ey))){
+           lectures[0] = "1";
+       }
+       else if(((Ax+1 == Ex) && (Ay+1 == Ey)) || ((Ax == Ex) && (Ay+1 == Ey)) || (Ax-1 == Ex && (Ay+1 == Ey))){
+           lectures[1] = "1";
+       }
+       else if(((Ax-1 == Ex) && (Ay-1 == Ey)) || ((Ax-1 == Ex) && (Ay == Ey)) || ((Ax-1 == Ex) && (Ay-1 == Ey))){
+           lectures[2] = "1";
+       }
+       else if(((Ax+1 == Ex) && (Ay-1 == Ey)) || ((Ax == Ex) && (Ay-1 == Ey)) || ((Ax-1 == Ex) && (Ay-1 == Ey ))){
+           lectures[3] = "1";
+       }
+       else if(Ax == Ex && Ay == Ey){
+           lectures[4] = "1";
+       }
    }
 
 

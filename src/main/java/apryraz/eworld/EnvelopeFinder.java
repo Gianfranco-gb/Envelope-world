@@ -13,8 +13,11 @@ import static java.lang.System.exit;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.sat4j.core.Vec;
 import org.sat4j.core.VecInt;
 
 import org.sat4j.specs.*;
@@ -79,6 +82,10 @@ public class EnvelopeFinder  {
     int EnvelopeFutureOffset;
     int DetectorOffset;
     int actualLiteral;
+    int aboveOffset = 0;
+    int belowOffset = 0;
+    int rightOffset = 0;
+    int leftOffset = 0;
 
 
    /**
@@ -89,6 +96,10 @@ public class EnvelopeFinder  {
      @param WDim the dimension of the Envelope World
 
    **/
+
+    int value1, value2, value3, value4, value5;
+    int[] listIntValues = new int[5];
+    int[] listPositionValues = new int[5];
     public EnvelopeFinder(int WDim)
     {
 
@@ -190,7 +201,7 @@ public class EnvelopeFinder  {
 
           // Ask to move, and check whether it was successful
           // Also, record if a pirate was found at that position
-          processMoveAnswer( moveToNext( ) );
+          processMoveAnswer( moveToNext() );
 
 
           // Next, use Detector sensor to discover new information
@@ -262,9 +273,10 @@ public class EnvelopeFinder  {
           agentX = Integer.parseInt( moveans.getComp(1) );
           agentY = Integer.parseInt( moveans.getComp(2) );
         
-          System.out.println("FINDER => moved to : (" + agentX + "," + agentY + ")" + " Pirate found : "+pirateFound );
+          System.out.println("FINDER => moved to : (" + agentX + "," + agentY + ")");
         }
     }
+    //+ " Pirate found : "+pirateFound
 
     /**
      *   Send to the environment object the question:
@@ -301,6 +313,7 @@ public class EnvelopeFinder  {
         int x = Integer.parseInt(ans.getComp(1));
         int y = Integer.parseInt(ans.getComp(2));
         String detects = ans.getComp(0);
+        String Value = ans.getComp(3);
 
          // Call your function/functions to add the evidence clauses
          // to Gamma to then be able to infer new NOT possible positions
@@ -311,10 +324,63 @@ public class EnvelopeFinder  {
 
 
          // CALL your functions HERE
+        IntegerValue(Value);
+        addEvidence(checkEvidence(), x, y);
     }
 
+    public void IntegerValue(String Value)
+    {
+        StringTokenizer token = new StringTokenizer(Value);
+        for(int i = 0; i < listIntValues.length; i++){
+            listIntValues[i] = (int)token.nextElement();
+        }
 
-    
+        //value1 = (int)token.nextElement();
+        //value2 = (int)token.nextElement();
+        //value3 = (int)token.nextElement();
+        //value4 = (int)token.nextElement();
+        //value5 = (int)token.nextElement();
+
+    }
+    public int[] checkEvidence(){
+        for(int i = 0; i < listIntValues.length; i++){
+            if(listIntValues[i] == 0){
+                listPositionValues[i] = i;
+            }
+
+        }
+    return listPositionValues;
+    }
+
+    public void addEvidence(int[] listPositionValues, int x,int y) throws ContradictionException {
+        for(int i = 0; i <listPositionValues.length; i++){
+            if(i == listPositionValues[i] && i == 0){
+                addCoordFormula(x,y,-1,aboveOffset);
+            }
+            if(i == listPositionValues[i] && i == 1){
+                addCoordFormula(x,y,-1,rightOffset);
+            }
+            if(i == listPositionValues[i] && i == 2){
+                addCoordFormula(x,y,-1, leftOffset);
+            }
+            if(i == listPositionValues[i] && i == 0){
+                addCoordFormula(x,y,-1,belowOffset);
+            }
+        }
+    }
+
+    public void addCoordFormula(int x, int y, int sign, int offset) throws ContradictionException {
+        VecInt Evidence = new VecInt();
+        int eval;
+
+        if(sign == +1){
+            eval = coordToLineal(x,y,offset);
+        }else{
+            eval = -coordToLineal(x,y,offset);
+        }
+        Evidence.insertFirst(eval);
+        solver.addClause(Evidence);
+    }
 
     /**
     *  This function should add all the clauses stored in the list
@@ -325,7 +391,12 @@ public class EnvelopeFinder  {
     public void addLastFutureClausesToPastClauses() throws  IOException,
             ContradictionException, TimeoutException
     {
-
+        Iterator it = futureToPast.iterator();
+        VecInt clause;
+        while(it.hasNext()){
+            clause= (VecInt) it.next();
+            solver.addClause(clause);
+        }
 
     }
 
@@ -344,24 +415,31 @@ public class EnvelopeFinder  {
     public void  performInferenceQuestions() throws  IOException,
             ContradictionException, TimeoutException
     {
-       // EXAMPLE code to check this for position (2,3):
-       // Get variable number for position 2,3 in past variables
-        int linealIndex = coordToLineal(2, 3, EnvelopeFutureOffset);
-       // Get the same variable, but in the past subset
-        int linealIndexPast = coordToLineal(2, 3, EnvelopePastOffset);
+        futureToPast = new ArrayList<>();
+        for(int i = 0; i< WorldDim; i++) {
+            for (int j = 0; j < WorldDim; j++) {
 
-        VecInt variablePositive = new VecInt();
-        variablePositive.insertFirst(linealIndex);
 
-        // Check if Gamma + variablePositive is unsatisfiable:
-        // This is only AN EXAMPLE for a specific position: (2,3)
-        if (!(solver.isSatisfiable(variablePositive))) {
-              // Add conclusion to list, but rewritten with respect to "past" variables
-              VecInt concPast = new VecInt();
-              concPast.insertFirst(-(linealIndexPast));
+                // EXAMPLE code to check this for position (2,3):
+                // Get variable number for position 2,3 in past variables
+                int linealIndex = coordToLineal(i, j, EnvelopeFutureOffset);
+                // Get the same variable, but in the past subset
+                int linealIndexPast = coordToLineal(i, j, EnvelopePastOffset);
 
-              futureToPast.add(concPast);
-              efstate.set( 2 , 3 , "X" );
+                VecInt variablePositive = new VecInt();
+                variablePositive.insertFirst(linealIndex);
+
+                // Check if Gamma + variablePositive is unsatisfiable:
+                // This is only AN EXAMPLE for a specific position: (2,3)
+                if (!(solver.isSatisfiable(variablePositive))) {
+                    // Add conclusion to list, but rewritten with respect to "past" variables
+                    VecInt concPast = new VecInt();
+                    concPast.insertFirst(-(linealIndexPast));
+
+                    futureToPast.add(concPast);
+                    efstate.set(i, j, "X");
+                }
+            }
         }
 
     }
@@ -375,7 +453,7 @@ public class EnvelopeFinder  {
     public ISolver buildGamma() throws UnsupportedEncodingException,
             FileNotFoundException, IOException, ContradictionException
     {
-        int totalNumVariables;
+        int totalNumVariables = 6;
 
         // You must set this variable to the total number of boolean variables
         // in your formula Gamma
@@ -386,6 +464,10 @@ public class EnvelopeFinder  {
         // This variable is used to generate, in a particular sequential order,
         // the variable indentifiers of all the variables
         actualLiteral = 1;
+
+        PastEnvelope();
+        FutureEnvelope();
+        PastNotEnvelopetoFutureNotEnvelope();
 
         // call here functions to add the differen sets of clauses
         // of Gamma to the solver object
@@ -402,6 +484,37 @@ public class EnvelopeFinder  {
         return solver;
     }
 
+    public void PastEnvelope() throws ContradictionException {
+        EnvelopePastOffset = actualLiteral;
+        VecInt pastClause = new VecInt();
+        for(int i = 0; i < WorldLinealDim; i++){
+            pastClause.insertFirst(actualLiteral);
+            actualLiteral++;
+        }
+        solver.addClause(pastClause);
+    }
+
+    public void FutureEnvelope() throws ContradictionException {
+        EnvelopeFutureOffset = actualLiteral;
+        VecInt futureClause = new VecInt();
+        for(int i = 0; i< WorldLinealDim; i++){
+            futureClause.insertFirst(actualLiteral);
+            actualLiteral++;
+        }
+        solver.addClause(futureClause);
+    }
+
+
+    public void PastNotEnvelopetoFutureNotEnvelope() throws ContradictionException {
+        for(int i = 0; i < WorldLinealDim; i++){
+            VecInt clause = new VecInt();
+            clause.insertFirst(i+1);
+            clause.insertFirst(-(i+EnvelopeFutureOffset));
+            solver.addClause(clause);
+        }
+
+
+    }
 
      /**
      * Convert a coordinate pair (x,y) to the integer value  t_[x,y]
