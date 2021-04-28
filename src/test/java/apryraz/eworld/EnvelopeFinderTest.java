@@ -1,3 +1,6 @@
+package apryraz.eworld;
+
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -9,6 +12,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import static java.lang.System.exit;
 
+import org.sat4j.core.VecInt;
 import org.sat4j.specs.*;
 import org.sat4j.minisat.*;
 import org.sat4j.reader.*;
@@ -38,6 +42,8 @@ public class EnvelopeFinderTest {
                                            IOException,  ContradictionException, TimeoutException {
     // Check (assert) whether the resulting state is equal to
     //  the targetState after performing action runNextStep with bAgent
+      eAgent.runNextStep();
+      Assert.assertTrue(targetState.equals(eAgent.getState()));
 
   }
 
@@ -68,14 +74,14 @@ public class EnvelopeFinderTest {
 /**
 *  Load a sequence of states from a file, and return the list
 *
-*  @param WDim        dimension of the world
+*  @param wDim        dimension of the world
 *  @param numStates   num of states to read from the file
 *  @param statesFile file name with sequence of target states, that should
 *                      be the resulting states after each movement in fileSteps
 *
 *  @return returns an ArrayList of TFState with the resulting list of states
 **/
-  ArrayList<TFState> loadListOfTargetStates( int wDim, int numStates, String statesFile ) {
+  ArrayList<EFState> loadListOfTargetStates( int wDim, int numStates, String statesFile ) {
 
      ArrayList<EFState> listOfStates = new ArrayList<EFState>(numStates);
 
@@ -121,29 +127,78 @@ public class EnvelopeFinderTest {
       // You should make TreasureFinder and TreasureWorldEnv objects to  test.
       // Then load sequence of target states, load sequence of steps into the eAgent
       // and then test the sequence calling testMakeSimpleStep once for each step.
-     EnvelopeFinder eAgent  ;
+     EnvelopeFinder eAgent = new EnvelopeFinder(wDim) ;
      // load information about the World into the EnvAgent
-     EnvelopeWorldEnv envAgent  ;
+     EnvelopeWorldEnv envAgent = new EnvelopeWorldEnv(wDim,fileEnvelopes) ;
      // Load list of states
-     ArrayList<EFState> seqOfStates ;
+     ArrayList<EFState> seqOfStates = loadListOfTargetStates(wDim,numSteps,fileStates) ;
 
 
      // Set environment agent and load list of steps into the finder agent
-     eAgent.loadListOfSteps(  numSteps, fileSteps ) ;
+     eAgent.loadListOfSteps(  numSteps, fileSteps );
      eAgent.setEnvironment( envAgent );
   
      // Test here the sequence of steps and check the resulting states with the
      // ones in seqOfStates
+      for(int i =0; i < numSteps; i++){
+          testMakeSimpleStep(eAgent,seqOfStates.get(i));
+      }
   }
+    @Test public void testSolver()   throws ContradictionException, TimeoutException {
+        ISolver solver = SolverFactory.newDefault();
+        solver.newVar(2);
+        solver.setTimeout(3600);
 
+        VecInt clause1 = new VecInt();
+        clause1.insertFirst(1);
+        clause1.insertFirst(2);
+        solver.addClause(clause1);
+        Assert.assertTrue(solver.isSatisfiable());
+
+        VecInt clause2 = new VecInt();
+        clause2.insertFirst(-1);
+        clause2.insertFirst(-2);
+        solver.addClause(clause2);
+        Assert.assertTrue(solver.isSatisfiable());
+
+        VecInt clause3 = new VecInt();
+        clause3.insertFirst(-1);
+        clause3.insertFirst(2);
+        solver.addClause(clause3);
+        Assert.assertTrue(solver.isSatisfiable());
+
+        VecInt clause4 = new VecInt();
+        clause4.insertFirst(1);
+        clause4.insertFirst(-2);
+        solver.addClause(clause4);
+
+        Assert.assertFalse(solver.isSatisfiable());
+    }
   /**
   *   This is an example test. You must replicate this method for each different
   *    test sequence, or use some kind of parametric tests with junit
   **/
-  @Test public void TWorldTest1()   throws
+  @Test
+  public void TWorldTest1()   throws
           IOException,  ContradictionException, TimeoutException {
    // Example test for 4x4 world , Treasure at 3,3 and 5 steps
-    testMakeSeqOfSteps(  4, 5, "tests/steps1.txt", "tests/states1.txt", "tests/envelopes1.txt"  );
+    testMakeSeqOfSteps(  5, 5, "tests/steps1.txt", "tests/states1.txt", "tests/envelopes1.txt"  );
   }
 
+  @Test
+    public void TWordTest2() throws
+          IOException, ContradictionException, TimeoutException {
+      testMakeSeqOfSteps(  5, 7, "tests/steps2.txt", "tests/states2.txt", "tests/envelopes2.txt"  );
+  }
+
+    @Test
+    public void TWordTest3() throws
+            IOException, ContradictionException, TimeoutException {
+        testMakeSeqOfSteps(  7, 6, "tests/steps3.txt", "tests/states3.txt", "tests/envelopes3.txt"  );
+    }
+    @Test
+    public void TWordTest4() throws
+            IOException, ContradictionException, TimeoutException {
+        testMakeSeqOfSteps(  7, 12, "tests/steps4.txt", "tests/states4.txt", "tests/envelopes4.txt"  );
+    }
 }

@@ -34,50 +34,50 @@ import org.sat4j.reader.*;
 *  the position of Envelope
 *
 **/
-public class EnvelopeFinder  {
+public class EnvelopeFinder {
 
 
-/**
-  * The list of steps to perform
-**/
+    /**
+     * The list of steps to perform
+     **/
     ArrayList<Position> listOfSteps;
-/**
-* index to the next movement to perform, and total number of movements
-**/
+    /**
+     * index to the next movement to perform, and total number of movements
+     **/
     int idNextStep, numMovements;
-/**
-*  Array of clauses that represent conclusiones obtained in the last
-* call to the inference function, but rewritten using the "past" variables
-**/
+    /**
+     * Array of clauses that represent conclusiones obtained in the last
+     * call to the inference function, but rewritten using the "past" variables
+     **/
     ArrayList<VecInt> futureToPast = null;
-/**
-* the current state of knowledge of the agent (what he knows about
-* every position of the world)
-**/
+    /**
+     * the current state of knowledge of the agent (what he knows about
+     * every position of the world)
+     **/
     EFState efstate;
-/**
-*   The object that represents the interface to the Envelope World
-**/
-   EnvelopeWorldEnv EnvAgent;
-/**
-*   SAT solver object that stores the logical boolean formula with the rules
-*   and current knowledge about not possible locations for Envelope
-**/
+    /**
+     * The object that represents the interface to the Envelope World
+     **/
+    EnvelopeWorldEnv EnvAgent;
+    /**
+     * SAT solver object that stores the logical boolean formula with the rules
+     * and current knowledge about not possible locations for Envelope
+     **/
     ISolver solver;
-/**
-*   Agent position in the world 
-**/
+    /**
+     * Agent position in the world
+     **/
     int agentX, agentY;
-/**
-*  Dimension of the world and total size of the world (Dim^2)
-**/
+    /**
+     * Dimension of the world and total size of the world (Dim^2)
+     **/
     int WorldDim, WorldLinealDim;
 
-/**
-*    This set of variables CAN be use to mark the beginning of different sets
-*    of variables in your propositional formula (but you may have more sets of
-*    variables in your solution).
-**/
+    /**
+     * This set of variables CAN be use to mark the beginning of different sets
+     * of variables in your propositional formula (but you may have more sets of
+     * variables in your solution).
+     **/
     int EnvelopePastOffset;
     int EnvelopeFutureOffset;
     int DetectorOffset;
@@ -86,22 +86,24 @@ public class EnvelopeFinder  {
     int belowOffset = 0;
     int rightOffset = 0;
     int leftOffset = 0;
+    int currentOffset = 0;
+    boolean diagonal1 = false;
 
 
-   /**
-     The class constructor must create the initial Boolean formula with the
-     rules of the Envelope World, initialize the variables for indicating
-     that we do not have yet any movements to perform, make the initial state.
 
-     @param WDim the dimension of the Envelope World
-
-   **/
+    /**
+     * The class constructor must create the initial Boolean formula with the
+     * rules of the Envelope World, initialize the variables for indicating
+     * that we do not have yet any movements to perform, make the initial state.
+     *
+     * @param WDim the dimension of the Envelope World
+     **/
 
     int value1, value2, value3, value4, value5;
     int[] listIntValues = new int[5];
     int[] listPositionValues = new int[5];
-    public EnvelopeFinder(int WDim)
-    {
+
+    public EnvelopeFinder(int WDim) {
 
         WorldDim = WDim;
         WorldLinealDim = WorldDim * WorldDim;
@@ -123,32 +125,29 @@ public class EnvelopeFinder  {
     }
 
     /**
-      Store a reference to the Environment Object that will be used by the
-      agent to interact with the Envelope World, by sending messages and getting
-      answers to them. This function must be called before trying to perform any
-      steps with the agent.
+     * Store a reference to the Environment Object that will be used by the
+     * agent to interact with the Envelope World, by sending messages and getting
+     * answers to them. This function must be called before trying to perform any
+     * steps with the agent.
+     *
+     * @param environment the Environment object
+     **/
+    public void setEnvironment(EnvelopeWorldEnv environment) {
 
-      @param environment the Environment object
-
-    **/
-    public void setEnvironment( EnvelopeWorldEnv environment ) {
-
-         EnvAgent =  environment;
+        EnvAgent = environment;
     }
 
 
     /**
-      Load a sequence of steps to be performed by the agent. This sequence will
-      be stored in the listOfSteps ArrayList of the agent.  Steps are represented
-      as objects of the class Position.
-
-      @param numSteps number of steps to read from the file
-      @param stepsFile the name of the text file with the line that contains
-                       the sequence of steps: x1,y1 x2,y2 ...  xn,yn
-
-    **/
-    public void loadListOfSteps( int numSteps, String stepsFile )
-    {
+     * Load a sequence of steps to be performed by the agent. This sequence will
+     * be stored in the listOfSteps ArrayList of the agent.  Steps are represented
+     * as objects of the class Position.
+     *
+     * @param numSteps  number of steps to read from the file
+     * @param stepsFile the name of the text file with the line that contains
+     *                  the sequence of steps: x1,y1 x2,y2 ...  xn,yn
+     **/
+    public void loadListOfSteps(int numSteps, String stepsFile) {
         String[] stepsList;
         String steps = ""; // Prepare a list of movements to try with the FINDER Agent
         try {
@@ -165,7 +164,7 @@ public class EnvelopeFinder  {
         }
         stepsList = steps.split(" ");
         listOfSteps = new ArrayList<Position>(numSteps);
-        for (int i = 0 ; i < numSteps ; i++ ) {
+        for (int i = 0; i < numSteps; i++) {
             String[] coords = stepsList[i].split(",");
             listOfSteps.add(new Position(Integer.parseInt(coords[0]), Integer.parseInt(coords[1])));
         }
@@ -174,57 +173,53 @@ public class EnvelopeFinder  {
     }
 
     /**
-     *    Returns the current state of the agent.
+     * Returns the current state of the agent.
      *
-     *    @return the current state of the agent, as an object of class EFState
-    **/
-    public EFState getState()
-    {
+     * @return the current state of the agent, as an object of class EFState
+     **/
+    public EFState getState() {
         return efstate;
     }
 
     /**
-    *    Execute the next step in the sequence of steps of the agent, and then
-    *    use the agent sensor to get information from the environment. In the
-    *    original Envelope World, this would be to use the Smelll Sensor to get
-    *    a binary answer, and then to update the current state according to the
-    *    result of the logical inferences performed by the agent with its formula.
-    *
-    **/
+     * Execute the next step in the sequence of steps of the agent, and then
+     * use the agent sensor to get information from the environment. In the
+     * original Envelope World, this would be to use the Smelll Sensor to get
+     * a binary answer, and then to update the current state according to the
+     * result of the logical inferences performed by the agent with its formula.
+     **/
     public void runNextStep() throws
-            IOException,  ContradictionException, TimeoutException
-    {
-          
-          // Add the conclusions obtained in the previous step
-          // but as clauses that use the "past" variables
-          addLastFutureClausesToPastClauses();
+            IOException, ContradictionException, TimeoutException {
 
-          // Ask to move, and check whether it was successful
-          // Also, record if a pirate was found at that position
-          processMoveAnswer( moveToNext() );
+        // Add the conclusions obtained in the previous step
+        // but as clauses that use the "past" variables
+        addLastFutureClausesToPastClauses();
+
+        // Ask to move, and check whether it was successful
+        // Also, record if a pirate was found at that position
+        processMoveAnswer(moveToNext());
 
 
-          // Next, use Detector sensor to discover new information
-          processDetectorSensorAnswer( DetectsAt() );
-           
+        // Next, use Detector sensor to discover new information
+        processDetectorSensorAnswer(DetectsAt());
 
-          // Perform logical consequence questions for all the positions
-          // of the Envelope World
-          performInferenceQuestions();
-          efstate.printState();      // Print the resulting knowledge matrix
+
+        // Perform logical consequence questions for all the positions
+        // of the Envelope World
+        performInferenceQuestions();
+        efstate.printState();      // Print the resulting knowledge matrix
     }
 
 
     /**
-    *   Ask the agent to move to the next position, by sending an appropriate
-    *   message to the environment object. The answer returned by the environment
-    *   will be returned to the caller of the function.
-    *
-    *   @return the answer message from the environment, that will tell whether the
-    *           movement was successful or not.
-    **/
-    public AMessage moveToNext()
-    {
+     * Ask the agent to move to the next position, by sending an appropriate
+     * message to the environment object. The answer returned by the environment
+     * will be returned to the caller of the function.
+     *
+     * @return the answer message from the environment, that will tell whether the
+     * movement was successful or not.
+     **/
+    public AMessage moveToNext() {
         Position nextPosition;
 
         if (idNextStep < numMovements) {
@@ -233,191 +228,342 @@ public class EnvelopeFinder  {
             return moveTo(nextPosition.x, nextPosition.y);
         } else {
             System.out.println("NO MORE steps to perform at agent!");
-            return (new AMessage("NOMESSAGE","","", ""));
+            return (new AMessage("NOMESSAGE", "", "", ""));
         }
     }
 
     /**
-    * Use agent "actuators" to move to (x,y)
-    * We simulate this by telling to the World Agent (environment)
-    * that we want to move, but we need the answer from it
-    * to be sure that the movement was made with success
-    *
-    *  @param x  horizontal coordinate (row) of the movement to perform
-    *  @param y  vertical coordinate (column) of the movement to perform
-    *
-    *  @return returns the answer obtained from the environment object to the
-    *           moveto message sent
-    **/
-    public AMessage moveTo( int x, int y )
-    {
+     * Use agent "actuators" to move to (x,y)
+     * We simulate this by telling to the World Agent (environment)
+     * that we want to move, but we need the answer from it
+     * to be sure that the movement was made with success
+     *
+     * @param x horizontal coordinate (row) of the movement to perform
+     * @param y vertical coordinate (column) of the movement to perform
+     * @return returns the answer obtained from the environment object to the
+     * moveto message sent
+     **/
+    public AMessage moveTo(int x, int y) {
         // Tell the EnvironmentAgentID that we want  to move
         AMessage msg, ans;
 
-        msg = new AMessage("moveto", (new Integer(x)).toString(), (new Integer(y)).toString(), "" );
-        ans = EnvAgent.acceptMessage( msg );
+        msg = new AMessage("moveto", (new Integer(x)).toString(), (new Integer(y)).toString(), "");
+        ans = EnvAgent.acceptMessage(msg);
         System.out.println("FINDER => moving to : (" + x + "," + y + ")");
 
         return ans;
     }
 
-   /**
+    /**
      * Process the answer obtained from the environment when we asked
      * to perform a movement
      *
      * @param moveans the answer given by the environment to the last move message
-   **/
-    public void processMoveAnswer ( AMessage moveans )
-    {
-        if ( moveans.getComp(0).equals("movedto") ) {
-          agentX = Integer.parseInt( moveans.getComp(1) );
-          agentY = Integer.parseInt( moveans.getComp(2) );
-        
-          System.out.println("FINDER => moved to : (" + agentX + "," + agentY + ")");
+     **/
+    public void processMoveAnswer(AMessage moveans) {
+        if (moveans.getComp(0).equals("movedto")) {
+            agentX = Integer.parseInt(moveans.getComp(1));
+            agentY = Integer.parseInt(moveans.getComp(2));
+
+            System.out.println("FINDER => moved to : (" + agentX + "," + agentY + ")");
         }
     }
     //+ " Pirate found : "+pirateFound
 
     /**
-     *   Send to the environment object the question:
-     *   "Does the detector sense something around(agentX,agentY) ?"
+     * Send to the environment object the question:
+     * "Does the detector sense something around(agentX,agentY) ?"
      *
-     *   @return return the answer given by the environment
-    **/
-    public AMessage DetectsAt( )
-    {
+     * @return return the answer given by the environment
+     **/
+    public AMessage DetectsAt() {
         AMessage msg, ans;
 
-        msg = new AMessage( "detectsat", (new Integer(agentX)).toString(),
-                                       (new Integer(agentY)).toString(), "" );
-        ans = EnvAgent.acceptMessage( msg );
+        msg = new AMessage("detectsat", (new Integer(agentX)).toString(),
+                (new Integer(agentY)).toString(), "");
+        ans = EnvAgent.acceptMessage(msg);
         System.out.println("FINDER => detecting at : (" + agentX + "," + agentY + ")");
         return ans;
     }
 
 
     /**
-    *   Process the answer obtained for the query "Detects at (x,y)?"
-    *   by adding the appropriate evidence clause to the formula
-    *
-    *   @param ans message obtained to the query "Detects at (x,y)?".
-    *          It will a message with three fields: DetectorValue x y
-    *
-    *    DetectorValue must be a number that encodes all the valid readings 
-    *    of the sensor given the envelopes in the 3x3 square around (x,y)
-    **/
-    public void processDetectorSensorAnswer( AMessage ans ) throws
-            IOException, ContradictionException,  TimeoutException
-    {
+     * Process the answer obtained for the query "Detects at (x,y)?"
+     * by adding the appropriate evidence clause to the formula
+     *
+     * @param ans message obtained to the query "Detects at (x,y)?".
+     *            It will a message with three fields: DetectorValue x y
+     *            <p>
+     *            DetectorValue must be a number that encodes all the valid readings
+     *            of the sensor given the envelopes in the 3x3 square around (x,y)
+     **/
+    public void processDetectorSensorAnswer(AMessage ans) throws
+            IOException, ContradictionException, TimeoutException {
 
         int x = Integer.parseInt(ans.getComp(1));
         int y = Integer.parseInt(ans.getComp(2));
         String detects = ans.getComp(0);
         String Value = ans.getComp(3);
 
-         // Call your function/functions to add the evidence clauses
-         // to Gamma to then be able to infer new NOT possible positions
-         // This new evidences could be removed at the end of the current step,
-         // if you have saved the consequences over the "past" variables (the memory
-         // of the agent) and the past is consistent with the future in your Gamma
-         // formula
+        // Call your function/functions to add the evidence clauses
+        // to Gamma to then be able to infer new NOT possible positions
+        // This new evidences could be removed at the end of the current step,
+        // if you have saved the consequences over the "past" variables (the memory
+        // of the agent) and the past is consistent with the future in your Gamma
+        // formula
 
 
-         // CALL your functions HERE
+        // CALL your functions HERE
         IntegerValue(Value);
-        addEvidence(checkEvidence(), x, y);
+        addEvidencesdetector(x,y);
+        //detectorImplications1(x,y);
+        //addEvidence(checkEvidence(), x, y);
     }
 
-    public void IntegerValue(String Value)
-    {
-        StringTokenizer token = new StringTokenizer(Value);
-        for(int i = 0; i < listIntValues.length; i++){
-            listIntValues[i] = (int)token.nextElement();
+    public void IntegerValue(String Value) {
+        for (int i = 0; i < listIntValues.length; i++) {
+            listIntValues[i] = Integer.parseInt(String.valueOf(Value.charAt(i + 1)));
+            //System.out.println(listIntValues[i]);
         }
 
-        //value1 = (int)token.nextElement();
-        //value2 = (int)token.nextElement();
-        //value3 = (int)token.nextElement();
-        //value4 = (int)token.nextElement();
-        //value5 = (int)token.nextElement();
-
     }
-    public int[] checkEvidence(){
-        for(int i = 0; i < listIntValues.length; i++){
-            if(listIntValues[i] == 0){
-                listPositionValues[i] = i;
-            }
 
+    public void addEvidencesdetector(int x,int y) throws ContradictionException {
+        for(int i = 0; i < listIntValues.length; i++) {
+            System.out.println(listIntValues[i]);
+            if(i == 0){
+                firstevidence1(x,y, listIntValues[i]);
+            } else if(i == 1){
+                secondevidence1(x,y,listIntValues[i]);
+            } else if( i == 2){
+                thirdevidence1(x,y,listIntValues[i]);
+            } else if(i == 3){
+                fourthevidence1(x,y,listIntValues[i]);
+            }else if(i == 4){
+                fiveevidence(x,y,listIntValues[i]);
+            }
         }
-    return listPositionValues;
+        diagonalevidence1(x,y,listIntValues[0],listIntValues[3], listIntValues[1]);
+        diagonalevidence2(x,y,listIntValues[2],listIntValues[3], listIntValues[1]);
     }
 
-    public void addEvidence(int[] listPositionValues, int x,int y) throws ContradictionException {
-        for(int i = 0; i <listPositionValues.length; i++){
-            if(i == listPositionValues[i] && i == 0){
-                addCoordFormula(x,y,-1,aboveOffset);
-            }
-            if(i == listPositionValues[i] && i == 1){
-                addCoordFormula(x,y,-1,rightOffset);
-            }
-            if(i == listPositionValues[i] && i == 2){
-                addCoordFormula(x,y,-1, leftOffset);
-            }
-            if(i == listPositionValues[i] && i == 0){
-                addCoordFormula(x,y,-1,belowOffset);
+    public void firstevidence1(int x, int y, int value) throws ContradictionException{
+        if(value == 0){
+            if(withinLimits(x+1,y)){
+                addCoordFormula(x + 1, y, -1, EnvelopeFutureOffset);
             }
         }
     }
+    public void secondevidence1(int x, int y, int value)throws ContradictionException{
+        if(value == 0){
+            if(withinLimits(x,y+1)){
+                addCoordFormula(x , y+1, -1, EnvelopeFutureOffset);
+            }
+        }
+    }
+
+    public void thirdevidence1(int x, int y, int value)throws ContradictionException{
+        if(value == 0){
+            if(withinLimits(x-1,y)){
+                addCoordFormula(x - 1, y, -1, EnvelopeFutureOffset);
+            }
+        }
+    }
+
+    public void fourthevidence1(int x, int y, int value)throws ContradictionException{
+        if(value == 0){
+            if(withinLimits(x,y-1)){
+                addCoordFormula(x, y - 1, -1, EnvelopeFutureOffset);
+            }
+        }
+    }
+
+    public void diagonalevidence1(int x, int y, int valueAB, int valueLT , int valueRT) throws ContradictionException{
+        if((valueAB !=1  && valueLT != 1) && (withinLimits(x+1,y-1))){
+            //if(x+1,y-1 == ){
+                addCoordFormula(x+1, y - 1, -1, EnvelopeFutureOffset);
+            //}
+        }
+        if((valueAB != 1 && valueLT ==1)&& (withinLimits(x+1,y-1))){
+            addCoordFormula(x+1, y - 1, -1, EnvelopeFutureOffset);
+        }
+        if(valueAB == 1 && valueLT !=1 && (withinLimits(x+1,y-1))){
+            addCoordFormula(x+1,y-1,-1,EnvelopeFutureOffset);
+        }
+
+        if((valueAB != 1 && valueRT != 1) && (withinLimits(x+1, y+1))){
+            //if(withinLimits(x+1, y+1)){
+                addCoordFormula(x+1, y + 1, -1, EnvelopeFutureOffset);
+            //}
+        }
+        if((valueAB != 1 && valueRT == 1) && (withinLimits(x+1, y+1))){
+            addCoordFormula(x+1, y + 1, -1, EnvelopeFutureOffset);
+        }
+        if((valueAB ==1 && valueRT != 1) &&(withinLimits(x+1,y+1))){
+            addCoordFormula(x+1,y+1,-1,EnvelopeFutureOffset);
+        }
+    }
+
+    public void diagonalevidence2(int x, int y, int valueBW, int valueLT, int valueRT)throws ContradictionException{
+        if((valueBW != 1 && valueLT != 1) && (withinLimits(x-1,y-1))){
+           // if(withinLimits(x-1,y-1)){
+                addCoordFormula(x-1, y - 1, -1, EnvelopeFutureOffset);
+          //  }
+        }
+        if((valueBW != 1 && valueLT == 1) && (withinLimits(x-1,y-1))){
+            addCoordFormula(x-1, y - 1, -1, EnvelopeFutureOffset);
+        }
+        if((valueBW == 1 && valueLT !=1) && (withinLimits(x-1,y-1))){
+            addCoordFormula(x-1,y-1,-1,EnvelopeFutureOffset);
+        }
+        if((valueBW != 1 && valueRT != 1) && (withinLimits(x-1,y+1))){
+            //if(withinLimits(x-1,y+1)){
+                addCoordFormula(x-1, y + 1, -1, EnvelopeFutureOffset);
+           // }
+        }
+        if((valueBW != 1 && valueRT == 1) && (withinLimits(x-1,y+1))){
+            addCoordFormula(x-1, y + 1, -1, EnvelopeFutureOffset);
+        }
+        if((valueBW ==1 && valueRT !=1) && (withinLimits(x-1,y+1))){
+            addCoordFormula(x-1,y+1,-1,EnvelopeFutureOffset);
+        }
+    }
+
+    public void firstevidence(int x, int y, int value) throws ContradictionException {
+       // if(value == 1){
+       //     diagonal1 = true;
+      //  }
+//            addCoordFormula(x,y,1,aboveOffset+((WorldDim*x-1)+y-1));
+//        if(value == 0){
+//            addCoordFormula(x,y,-1,aboveOffset+((WorldDim*(x-1))+y-1));
+        if(value == 0) {
+            //System.out.println("aboveOffset: "+aboveOffset);
+            for (int j = y - 1; j <= y + 1; j++) {
+                if (withinLimits(x + 1, j)) {
+//                    addCoordFormula(x + 1, j, -1, EnvelopeFutureOffset + ((WorldDim * (x - 1)) + y - 1));
+                    addCoordFormula(x + 1, j, -1, EnvelopeFutureOffset);
+                }
+            }
+        }
+    }
+
+    public void secondevidence(int x, int y, int value) throws ContradictionException {
+        //if(value == 1){
+          //  addCoordFormula(x,y,1,rightOffset+((WorldDim*x-1)+y-1));
+      //  if(value == 0) {
+            //addCoordFormula(x, y, -1, rightOffset + ((WorldDim * (x - 1)) + y - 1));
+            if(value == 0) {
+                //System.out.println("rightOffset: " + rightOffset);
+                for (int j = x + 1; j >= x - 1; j--) {
+                    if (withinLimits(j, y + 1)) {
+                      //  if(diagonal1 == true){
+
+                       // }
+//                        addCoordFormula(j, y + 1, -1, EnvelopeFutureOffset + ((WorldDim * (x - 1)) + y - 1));
+                        addCoordFormula(j, y + 1, -1, EnvelopeFutureOffset);
+                    }
+                }
+            // }
+        }
+    }
+    public void thirdevidence(int x, int y, int value) throws ContradictionException {
+//        if(value == 1){
+//            addCoordFormula(x,y,1,belowOffset+((WorldDim*x-1)+y-1));
+//        if(value == 0) {
+//            addCoordFormula(x, y, -1, EnvelopeFutureOffset + ((WorldDim * (x - 1)) + y - 1));
+            if(value == 0) {
+//               // System.out.println("belowOffset: " + belowOffset);
+                for (int j = y - 1; j <= y + 1; j++) {
+                    if (withinLimits(x - 1, j)) {
+//                        addCoordFormula(x - 1, j, -1, EnvelopeFutureOffset + ((WorldDim * (x - 1)) + y - 1));
+                        addCoordFormula(x - 1, j, -1, EnvelopeFutureOffset);
+                    }
+                }
+            }
+        //}
+    }
+    public void fourthevidence(int x, int y, int value) throws ContradictionException {
+//        if(value == 1){
+//            addCoordFormula(x,y,1,leftOffset+((WorldDim*x-1)+y-1));
+//        if(value == 0) {
+//            addCoordFormula(x, y, -1, leftOffset + ((WorldDim * (x - 1)) + y - 1));
+        if (value == 0) {
+            // System.out.println("leftOffset: " + leftOffset);
+            for (int j = x + 1; j >= x - 1; j--) {
+                if(withinLimits(j,y-1)) {
+ //                   addCoordFormula(j, y - 1, -1, EnvelopeFutureOffset + ((WorldDim * (x - 1)) + y - 1));
+                    addCoordFormula(j, y - 1, -1, EnvelopeFutureOffset);
+//                }
+                }
+//            }
+            }
+        }
+    }
+    public void fiveevidence(int x, int y, int value) throws ContradictionException {
+//       if(value == 1){
+//            addCoordFormula(x,y,1,currentOffset+((WorldDim*x-1)+y-1));
+//        if(value == 0) {
+//           addCoordFormula(x, y, -1, currentOffset + ((WorldDim * (x - 1)) + y - 1));
+            if(value == 0){
+               // System.out.println("currentOffset: "+currentOffset);
+//                addCoordFormula(x,y,-1, EnvelopeFutureOffset+((WorldDim*(x-1))+y-1));
+                addCoordFormula(x,y,-1, EnvelopeFutureOffset);
+        }
+       }
+
+
+
 
     public void addCoordFormula(int x, int y, int sign, int offset) throws ContradictionException {
         VecInt Evidence = new VecInt();
         int eval;
 
-        if(sign == +1){
-            eval = coordToLineal(x,y,offset);
-        }else{
-            eval = -coordToLineal(x,y,offset);
+        if (sign == +1) {
+            eval = coordToLineal(x, y, offset);
+        } else {
+            eval = -(coordToLineal(x, y, offset));
         }
+        //System.out.println(offset);
         Evidence.insertFirst(eval);
         solver.addClause(Evidence);
     }
 
-    /**
-    *  This function should add all the clauses stored in the list
-    *  futureToPast to the formula stored in solver.
-    *   Use the function addClause( VecInt ) to add each clause to the solver
-    *
-    **/
-    public void addLastFutureClausesToPastClauses() throws  IOException,
-            ContradictionException, TimeoutException
-    {
-        Iterator it = futureToPast.iterator();
-        VecInt clause;
-        while(it.hasNext()){
-            clause= (VecInt) it.next();
-            solver.addClause(clause);
-        }
 
+    /**
+     * This function should add all the clauses stored in the list
+     * futureToPast to the formula stored in solver.
+     * Use the function addClause( VecInt ) to add each clause to the solver
+     **/
+    public void addLastFutureClausesToPastClauses() throws IOException,
+            ContradictionException, TimeoutException {
+        if (futureToPast != null) {
+            Iterator it = futureToPast.iterator();
+            VecInt clause;
+            while (it.hasNext()) {
+                clause = (VecInt) it.next();
+                solver.addClause(clause);
+            }
+            futureToPast.clear();
+        }
     }
 
     /**
-    * This function should check, using the future variables related
-    * to possible positions of Envelope, whether it is a logical consequence
-    * that an envelope is NOT at certain positions. This should be checked for all the
-    * positions of the Envelope World.
-    * The logical consequences obtained, should be then stored in the futureToPast list
-    * but using the variables corresponding to the "past" variables of the same positions
-    *
-    * An efficient version of this function should try to not add to the futureToPast
-    * conclusions that were already added in previous steps, although this will not produce
-    * any bad functioning in the reasoning process with the formula.
-    **/
-    public void  performInferenceQuestions() throws  IOException,
-            ContradictionException, TimeoutException
-    {
+     * This function should check, using the future variables related
+     * to possible positions of Envelope, whether it is a logical consequence
+     * that an envelope is NOT at certain positions. This should be checked for all the
+     * positions of the Envelope World.
+     * The logical consequences obtained, should be then stored in the futureToPast list
+     * but using the variables corresponding to the "past" variables of the same positions
+     * <p>
+     * An efficient version of this function should try to not add to the futureToPast
+     * conclusions that were already added in previous steps, although this will not produce
+     * any bad functioning in the reasoning process with the formula.
+     **/
+    public void performInferenceQuestions() throws IOException,
+            ContradictionException, TimeoutException {
         futureToPast = new ArrayList<>();
-        for(int i = 0; i< WorldDim; i++) {
-            for (int j = 0; j < WorldDim; j++) {
+        for (int i = 1; i <= WorldDim; i++) {
+            for (int j = 1; j <= WorldDim; j++) {
 
 
                 // EXAMPLE code to check this for position (2,3):
@@ -445,15 +591,14 @@ public class EnvelopeFinder  {
     }
 
     /**
-    * This function builds the initial logical formula of the agent and stores it
-    * into the solver object.
-    *
-    *  @return returns the solver object where the formula has been stored
-    **/
+     * This function builds the initial logical formula of the agent and stores it
+     * into the solver object.
+     *
+     * @return returns the solver object where the formula has been stored
+     **/
     public ISolver buildGamma() throws UnsupportedEncodingException,
-            FileNotFoundException, IOException, ContradictionException
-    {
-        int totalNumVariables = 6;
+            FileNotFoundException, IOException, ContradictionException {
+        int totalNumVariables = 7 * WorldLinealDim;
 
         // You must set this variable to the total number of boolean variables
         // in your formula Gamma
@@ -468,6 +613,9 @@ public class EnvelopeFinder  {
         PastEnvelope();
         FutureEnvelope();
         PastNotEnvelopetoFutureNotEnvelope();
+        detectorImplications1();
+        //notInFirstPosition();
+        //detectorImplications();
 
         // call here functions to add the differen sets of clauses
         // of Gamma to the solver object
@@ -482,6 +630,110 @@ public class EnvelopeFinder  {
 
 
         return solver;
+    }
+
+    public void detectorImplications1() throws ContradictionException {
+        for(int i = 0; i < 5; i++){
+            for (int x = 1; x <= WorldDim; x++) {
+                for (int y = 1; y <= WorldDim; y++) {
+                    if (i == 0) {
+                        if (aboveOffset == 0) {
+                            aboveOffset = actualLiteral;
+                        }
+                        insertaboveimplications(x, y);
+                        actualLiteral++;
+                    } else if (i == 1) {
+                        if (rightOffset == 0) {
+                            rightOffset = actualLiteral;
+                        }
+                        insertrightimplications(x, y);
+                        actualLiteral++;
+                    } else if (i == 2) {
+                        if (belowOffset == 0) {
+                            belowOffset = actualLiteral;
+                        }
+                        insertbelowimplications(x, y);
+                        actualLiteral++;
+                    } else if (i == 3) {
+                        if (leftOffset == 0) {
+                            leftOffset = actualLiteral;
+                        }
+                        insertleftimplications(x, y);
+                        actualLiteral++;
+                    } else if (i == 4) {
+                        if (currentOffset == 0) {
+                            currentOffset = actualLiteral;
+                        }
+                        insertactualimplications(x, y);
+                        actualLiteral++;
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    public void insertaboveimplications(int x, int y) throws ContradictionException {
+        //System.out.println("AboveOffset2:" +aboveOffset);
+        int firstimplicate = (coordToLineal(x, y, aboveOffset));
+        for (int j = y - 1; j <= y + 1; j++) {
+            if(withinLimits(x+1,j)) {
+                //int firstimplicate = (coordToLineal(x, y, aboveOffset));
+                int secondimplicate = -(coordToLineal(x + 1, j, EnvelopeFutureOffset));
+                addImplicationtoFormula(firstimplicate, secondimplicate);
+            }
+        }
+    }
+
+    public void insertrightimplications(int x, int y) throws ContradictionException {
+        //System.out.println("AboveOffset2:" +rightOffset);
+        int firstimplicate = (coordToLineal(x,y, rightOffset));
+        for(int j = x+1; j >= x-1; j--){
+            if(withinLimits(j, y+1)) {
+                //int firstimplicate = (coordToLineal(x,y, rightOffset));
+                int secondimplicate = -(coordToLineal(j, y + 1, EnvelopeFutureOffset));
+                addImplicationtoFormula(firstimplicate, secondimplicate);
+            }
+        }
+    }
+
+    public void insertbelowimplications(int x, int y) throws ContradictionException {
+        int firstimplicate = (coordToLineal(x,y, belowOffset));
+        for(int j = y-1; j <= y+1; j++ ) {
+            if (withinLimits(x-1,j)) {
+                //int firstimplicate = (coordToLineal(x,y, belowOffset));
+                int secondimplicate = -(coordToLineal(x - 1, j, EnvelopeFutureOffset));
+                addImplicationtoFormula(firstimplicate, secondimplicate);
+            }
+        }
+
+    }
+
+    public void insertleftimplications(int x, int y) throws ContradictionException {
+        int firstimplicate = (coordToLineal(x,y,leftOffset));
+        for(int j = x+1; j >= x-1; j--) {
+            if (withinLimits(j, y - 1)) {
+                //int firstimplicate = (coordToLineal(x,y,leftOffset));
+                int secondimplicate = -(coordToLineal(j, y - 1, EnvelopeFutureOffset));
+                addImplicationtoFormula(firstimplicate, secondimplicate);
+            }
+        }
+    }
+
+    public void insertactualimplications(int x, int y) throws ContradictionException {
+        if (withinLimits(x, y)) {
+            int firstimplicate = (coordToLineal(x, y, currentOffset));
+            int secondimplicate = -(coordToLineal(x, y, EnvelopeFutureOffset));
+            addImplicationtoFormula(firstimplicate, secondimplicate);
+        }
+    }
+
+    public void addImplicationtoFormula(int firstImplicate, int SecondImplicate) throws ContradictionException {
+        VecInt implication = new VecInt();
+        implication.insertFirst(-(firstImplicate));
+        implication.insertFirst(SecondImplicate);
+        solver.addClause(implication);
     }
 
     public void PastEnvelope() throws ContradictionException {
@@ -512,8 +764,15 @@ public class EnvelopeFinder  {
             clause.insertFirst(-(i+EnvelopeFutureOffset));
             solver.addClause(clause);
         }
+    }
 
-
+    private void notInFirstPosition() throws ContradictionException {
+        VecInt notInFuture = new VecInt();
+        VecInt notInPast = new VecInt();
+        notInFuture.insertFirst(-EnvelopeFutureOffset);
+        notInPast.insertFirst(-EnvelopePastOffset);
+        solver.addClause(notInFuture);
+        solver.addClause(notInPast);
     }
 
      /**
@@ -551,7 +810,10 @@ public class EnvelopeFinder  {
         coords[0] = (lineal - 1) / WorldDim + 1;
         return coords;
     }
+    public boolean withinLimits(int x, int y) {
 
+        return (x >= 1 && x <= WorldDim && y >= 1 && y <= WorldDim);
+    }
 
 
 }

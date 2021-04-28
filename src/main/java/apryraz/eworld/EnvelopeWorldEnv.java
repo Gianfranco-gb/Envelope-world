@@ -2,8 +2,10 @@
 
 package apryraz.eworld;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
-
+import java.util.Scanner;
 
 
 public class EnvelopeWorldEnv {
@@ -35,7 +37,22 @@ public class EnvelopeWorldEnv {
 *            set of envelope locations in a single line.
 **/
   public void loadEnvelopeLocations( String envelopeFile ) {
-      locations = envelopeFile.split(" ");
+      try{
+          File myObjt = new File(envelopeFile);
+          Scanner myreader = new Scanner(myObjt);
+
+          while(myreader.hasNextLine()){
+              String data = myreader.nextLine();
+              locations = data.split(" ");
+          }
+          myreader.close();
+      } catch (FileNotFoundException e) {
+          e.printStackTrace();
+      }
+//      locations = envelopeFile.split(" ");
+//      for (int i = 0; i <locations.length; i++) {
+//         System.out.println(locations[i]);
+//      }
   }
 
 
@@ -86,40 +103,47 @@ public class EnvelopeWorldEnv {
        for(int i = 0; i<lectures.length; i++){
            lectures[i] = "0";
        }
+
     }
 
     public void ConverLecturesString(){
+       lecturesString = "0";
        for(int i = 0; i<lectures.length; i++){
            lecturesString = lecturesString+ lectures[i];
        }
     }
 
    public void Allenvelops (int x, int y){
+       //System.out.println("locations:" +locations);
        for( int i = 0; i < locations.length; i++){
            String envelope = locations[i];
-          int Ex = envelope.charAt(0);
-          int Ey = envelope.charAt(2);
-          EnvelopeLocation(x,y, Ex, Ey);
+           int Ex = Integer.parseInt(String.valueOf(envelope.charAt(0)));
+           int Ey = Integer.parseInt(String.valueOf(envelope.charAt(2)));
+           EnvelopeLocation(x,y, Ex, Ey);
        }
+       //for(int i = 0; i <lectures.length; i++){
+       //    System.out.println(lectures[i]);
+      // }
    }
 
 
 
 
    public void EnvelopeLocation(int Ax, int Ay, int Ex, int Ey){
-       if (((Ax+1 == Ex) && (Ay-1 == Ey)) || ((Ax+1 == Ey) && (Ay == Ey)) || ((Ax+1 == Ex) && (Ay +1 == Ey))){
+       if (((Ax+1 == Ex) && (Ay-1 == Ey)) || ((Ax+1 == Ex) && (Ay == Ey)) || ((Ax+1 == Ex) && (Ay+1 == Ey))){
            lectures[0] = "1";
        }
-       else if(((Ax+1 == Ex) && (Ay+1 == Ey)) || ((Ax == Ex) && (Ay+1 == Ey)) || (Ax-1 == Ex && (Ay+1 == Ey))){
+       if(((Ax+1 == Ex) && (Ay+1 == Ey)) || ((Ax == Ex) && (Ay+1 == Ey)) || ((Ax-1 == Ex) && (Ay+1 == Ey))){
            lectures[1] = "1";
        }
-       else if(((Ax-1 == Ex) && (Ay-1 == Ey)) || ((Ax-1 == Ex) && (Ay == Ey)) || ((Ax-1 == Ex) && (Ay-1 == Ey))){
+       if(((Ax-1 == Ex) && (Ay-1 == Ey)) || ((Ax-1 == Ex) && (Ay == Ey)) || ((Ax-1 == Ex) && (Ay+1 == Ey))){
            lectures[2] = "1";
        }
-       else if(((Ax+1 == Ex) && (Ay-1 == Ey)) || ((Ax == Ex) && (Ay-1 == Ey)) || ((Ax-1 == Ex) && (Ay-1 == Ey ))){
+       if(((Ax+1 == Ex) && (Ay-1 == Ey)) || ((Ax == Ex) && (Ay-1 == Ey)) || ((Ax-1 == Ex) && (Ay-1 == Ey ))){
            lectures[3] = "1";
        }
-       else if(Ax == Ex && Ay == Ey){
+       if(Ax == Ex && Ay == Ey){
+           System.out.println("hola");
            lectures[4] = "1";
        }
    }
