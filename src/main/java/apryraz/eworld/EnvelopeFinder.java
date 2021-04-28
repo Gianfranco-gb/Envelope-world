@@ -87,7 +87,6 @@ public class EnvelopeFinder {
     int rightOffset = 0;
     int leftOffset = 0;
     int currentOffset = 0;
-    boolean diagonal1 = false;
 
 
 
@@ -99,9 +98,7 @@ public class EnvelopeFinder {
      * @param WDim the dimension of the Envelope World
      **/
 
-    int value1, value2, value3, value4, value5;
     int[] listIntValues = new int[5];
-    int[] listPositionValues = new int[5];
 
     public EnvelopeFinder(int WDim) {
 

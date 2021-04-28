@@ -65,11 +65,18 @@ public class EnvelopeWorld {
         // Here I run a concrete example, but you should read parameters from
         // the command line, as decribed above.
 
-        // int wDim = Integer.parseInt(args[0]);
-        //int numSteps = Integer.parseInt(args[1]);
-
-        // runStepsSequence(wDim, numSteps, args[2], args[3]);
-        runStepsSequence(  4, 5, "tests/steps1.txt", "tests/envelopes1.txt"  );
+        //int wDim = Integer.parseInt(args[0]);
+        // int numSteps = Integer.parseInt(args[1]);
+        if (args.length <= 4) {
+            System.out.println("You must specify all arguments needed");
+        } else {
+            int wDim = Integer.parseInt(args[0]);
+            int numSteps = Integer.parseInt(args[1]);
+            String fileSteps = args[2];
+            String fileEnvelopes = args[3];
+            runStepsSequence(wDim, numSteps, fileSteps, fileEnvelopes);
+            //runStepsSequence(  4, 5, "tests/steps1.txt", "tests/envelopes1.txt"  );
+        }
     }
 
 }

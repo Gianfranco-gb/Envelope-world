@@ -91,9 +91,6 @@ public class EnvelopeWorldEnv {
                ConverLecturesString();
                ans = new AMessage("detectsat", msg.getComp(1), msg.getComp(2), lecturesString );
            }
-             // YOU MUST ANSWER HERE TO THE OTHER MESSAGE TYPE:
-             //   ( "detectsat", "x" , "y", "" )
-             //
          }
        return ans;
 
@@ -114,16 +111,12 @@ public class EnvelopeWorldEnv {
     }
 
    public void Allenvelops (int x, int y){
-       //System.out.println("locations:" +locations);
        for( int i = 0; i < locations.length; i++){
            String envelope = locations[i];
            int Ex = Integer.parseInt(String.valueOf(envelope.charAt(0)));
            int Ey = Integer.parseInt(String.valueOf(envelope.charAt(2)));
            EnvelopeLocation(x,y, Ex, Ey);
        }
-       //for(int i = 0; i <lectures.length; i++){
-       //    System.out.println(lectures[i]);
-      // }
    }
 
 
@@ -143,7 +136,6 @@ public class EnvelopeWorldEnv {
            lectures[3] = "1";
        }
        if(Ax == Ex && Ay == Ey){
-           System.out.println("hola");
            lectures[4] = "1";
        }
    }
